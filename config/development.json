@@ -1,0 +1,61 @@
+{
+	"encryption": {
+		"key": "+cjqs&#t67Ch+mPS",
+		"realKey": "!$BeLDex#.N^MALAYSAJb0*7wv3nhe.$"
+	},
+	"secrete": {
+		"issuer": "beldex",
+		"domain": "www.belbex.io",
+		"key": " --$_VM?LLx3XK95ZJ",
+		"expiry": "365d",
+		"refreshTokenExpiry": "365d",
+		"infoToken": "365d",
+		"infokey": "Skp9PyY*C6Cute_@Mwnu-w",
+		"refreshKey": "Nkqw^h%MDeR5m7DGQ",
+		"mobileExpiry": "365d"
+	},
+	"site": {
+		"url": "http://localhost:3000",
+		"version": "v1",
+		"hmtLink": 2
+	},
+	"settings": {
+		"expiryTime": 72,
+		"timeZone": "UTC"
+	},
+	"activation": {
+		"expiryTime": 1800,
+		"timeZone": "UTC"
+	},
+	"otpForEmail": {
+		"hmt": 3,
+		"timeExpiry": 180
+	},
+	"walletForEmail": {
+		"timeExpiry": 1800
+	},
+	"accountActive": {
+		"hmt": 5,
+		"timeExpiry": 7200,
+		"limit": 3,
+		"check": 6
+	},
+	"accountActiveRegister": {
+		"hmt": 1,
+		"timeExpiry": 7200,
+		"limit": 0
+	},
+	"withdrawActive": {
+		"timeExpiry": 86400
+	},
+	"liquidity": {
+		"topic": "trade-"
+	},
+	"g2fDateCheck": {
+		"start": "2019-10-22T22:04:27.824Z",
+		"end": "2019-12-14T21:30:00.000Z"
+	},
+	"g2fOldLength": {
+		"length": 32
+	}
+}

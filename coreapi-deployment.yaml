@@ -1,0 +1,376 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: coreapi
+  namespace: api
+  creationTimestamp: null
+  labels:
+     app: coreapi
+spec:
+  ports:
+   - name: "80"
+     port: 80
+     targetPort: coreapi
+     protocol: TCP
+   - name: "443"
+     port: 443
+     targetPort: coreapi
+     protocol: TCP
+  selector:
+     app: coreapi
+#  type: LoadBalancer
+#  loadBalancerSourceRanges:
+#  - 10.0.0.0/8
+#  - 210.18.155.162/32
+#  - 106.51.127.105/32
+#  - 157.51.126.119/32
+#  - 157.51.110.132/32
+#  - 157.51.161.77/32
+#  - 157.51.182.215/32
+#  - 157.51.169.249/32
+#  - 27.4.117.216/32
+#  - 49.207.131.221/32
+#  - 183.83.155.246/32
+#  - 49.207.130.132/32
+#  - 157.51.97.111/32
+#  - 106.200.46.236/32
+#  - 49.207.137.243/32
+#  type: LoadBalancer
+---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: core-pv-claim
+#   creationTimestamp: null
+#   labels:
+#      app: coreapi
+# spec:
+#   accessModes:
+#   - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 20Gi
+# ---
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: coreapipod
+  namespace: api
+spec:
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    name: coreapi
+  minReplicas: 1
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 80
+  - type: Resource
+    resource:
+      name: memory
+      targetAverageValue: 300Mi
+#status:
+#  observedGeneration: 1
+#  lastScaleTime: <some-time>
+#  currentReplicas: 1
+#  desiredReplicas: 1
+#  currentMetrics:
+#  - type: Resource
+#    resource:
+#      name: cpu
+#      currentAverageUtilization: 0
+#      currentAverageValue: 0
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coreapi
+  namespace: api
+spec:
+  selector:
+    matchLabels:
+      app: coreapi
+  strategy: 
+#    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: coreapi
+    spec:
+      containers:
+      - name: coreapi
+        image: gcr.io/beldex-exchange-289008/coreapicicd:latest
+        env:
+        - name: MONGODB_CONNECTION
+          value: mongod-0.mongodb-service.db.svc.cluster.local:27017,mongod-1.mongodb-service.db.svc.cluster.local:27017,mongod-2.mongodb-service.db.svc.cluster.local:27017/admin?replicaSet=MainRepSet
+#        - name: MONGODB_HOST
+#          value: mongod-0.mongodb-service.default.svc.cluster.local
+#        - name: MONGODB_HOST
+#          value: mongod-1.mongodb-service.default.svc.cluster.local
+#        - name: MONGODB_HOST
+#          value: mongod-2.mongodb-service.default.svc.cluster.local
+#          value: databaselv.db.svc.cluster.local
+#          value: 10.27.240.73
+#        - name: MONGODB_PORT
+#          value: "27017"
+#        - name: MONGODB_USER
+#          value: root
+#        - name: MONGODB_PASSWORD
+#          value: beldex123
+#        - name: MONGODB_NAME
+#          value: admin
+        - name: NOTIFICATION
+          value: http://notificationapi.api.svc.cluster.local:4000
+        - name: NOTIFICATION_VERSION
+          value: v1
+        - name: KAFKA
+          value: kafka.db.svc.cluster.local:9092 
+        - name: WALLETAPI
+          value: http://walletapi.api.svc.cluster.local:5000
+        - name: WALLETAPI_VERSION
+          value: v1
+        - name: MATCHINGENGINE
+          value: http://matchingengapi.api.svc.cluster.local:8000
+#        - name: MATCHINGENGINE_PORT
+#          value: "8080"
+        - name: MATCHINGENGINE_VERSION
+          value: v1
+        - name: REDIS_HOST
+          value: redis-cluster.db.svc.cluster.local
+        - name: REDIS_PORT
+          value: "6379"
+        - name: APIKEY
+          value: "HHTpHbPbrIr57znleG98ToznkBxQMsXM7aCJpLQaOQOqHHXEHhJzf1MZRUV4YSPN"
+   #       value: "Qe2ilD78At12pNUWISKw1EyK8fhtccPj9NZ2Jts2rNXmAOjWhPiCAt2tdCwJ9GUj"
+        - name: SECRETKEY
+          value: "MewqcM5KHlq0bLw3l8Xwmll6UxGe20n0SHO78SEFTdH8KrL1pY2RLY4AYRCJAYMm"
+        - name: CLIENT_SDK_ID
+          value: 70a51de5-c92a-4211-95ad-5ce78f736d34
+        - name: SUCCESS_URL
+          value: https://www.beldex.io/kyc-submitted
+        - name: ERROR_URL
+          value: https://www.beldex.io/kyc-error
+        - name: ENDPOINT
+          value: https://coreapi.beldex.io/api/v1/user/kyc-update
+        - name: YOTI_BASE_URL
+          value: https://api.yoti.com/idverify/v1
+        - name: LINKURL
+          value: https://www.beldex.io/registerUser?ref=
+        - name: HTTPKEY
+          value: eb3b014b-6f64-42b8-8294-c0934316216c
+        #  value: "61efd7ff-4653-4841-bc71-f0d242003336"
+          #value: "5e930917-0d1a-40cf-9784-b92a11fcd58a"
+        - name: HTTPSECRET
+          value: 4138B851ECA8BDE215543B44D242FFD2
+        #  value: "5382FD3D3851B7930B2FD75DEC7B6D62"
+        - name: G2F_HOST_NAME
+          value: https://www.beldex.io
+        - name: URLHOST
+          value: https://www.okex.com
+        - name: PASSPHRASE
+          value: "Beldex123"
+        - name: client_id
+          value: 85CjQb4MPpZwj4dp1fWBDqnWXUOKeRf6Ocgh9sQGOz0
+        - name: client_secret
+          value: OMOKYRChOfQHQ7wZjRIK_9bHBLFQXI2UDN48qdL2Rzw
+        - name: grant_type
+          value: authorization_code
+        - name: redirect_uri
+          value: https://www.beldex.io/kyc-submitted
+        - name: fractal_auth
+          value: https://auth.fractal.id/oauth/token
+        - name: fractal_user
+          value: https://resource.fractal.id/users/me
+        - name: SLACK_WEBHOOK_URL
+          value: https://hooks.slack.com/services/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
+        - name: KEY
+          value: 6%x6UM8Z2Sh*2z%q
+        - name: TREEP_BTC
+          value: "0.00004390"
+        - name: TREEP_USDT
+          value: "0.42"
+        - name: ETH_TOADDRESS
+          value: "0x258B7B9A1BA92f47f5F4f5e733293477620a82Cb"
+        - name: BTC_TOADDRESS
+          value: "bc1qpklwrxfwqwwcthwmzkuhxnd0padyqnf37laegt"
+        - name: USDT_TOADDRESS
+          value: "0x258B7B9A1BA92f47f5F4f5e733293477620a82Cb"
+        - name: LTC_TOADDRESS
+          value: "ltc1qxutkkyymkwsghmu2u04ltdmcxtra07yk6ydm8q"
+        - name: DASH_TOADDRESS
+          value: "XxTeh1FemiZqu7T4GSBDuyYEokSXegYTLu"
+        - name: OKEX_TRADEPWD
+          value: "Qwertypoiu@123"
+        - name: WITHDRAWAL_HTTPKEY
+          value: "c9af032b-e914-4b81-91c5-4eb0d4052df6"
+        - name: WITHDRAWAL_HTTPSECRET
+          value: "85A60B47850FD5885DBBAA9E44AC5990"
+        - name: BLURT_SIGNATURE
+#          value: "5KSBUJdSrF37c1xgSHWAWnoVf9jCo4bJvbTkTVmPLX6VKx1Q53a"
+#          value: "5J7v58qMHMKW9SKuwboTdnHLabzxA68GKggsQ2kZ4kpz22XiszZ"
+#          value: "5J7v58qMHMKW9SKuwboTdnHLabzxA68GKggsQ2kZ4kpz22XiszZ"
+          value: 5J7v58qMHMKW9SKuwboTdnHLabzxA68GKggsQ2kZ4kpz22XiszZ
+        - name: BLURT_USERNAME
+          value: beldex-hot
+        - name: BLURT_URL
+          value: https://rpc.blurt.world
+        #  value: https://blurtd.privex.io
+        - name: BLURT_TO
+          value: beldex-hot
+        - name: ASSET_ID
+          value: 5f8a2a47ce55760006bb9570
+        - name: FRONT_END_URL
+          value: https://www.beldex.io/
+#        - name: NODE_ENV
+#          value: development
+        envFrom:
+         - secretRef:
+             name: mongodb-secret
+        ports:
+          - containerPort: 3000
+            name: coreapi
+            protocol: TCP
+        livenessProbe:
+           tcpSocket:
+             port: 3000
+           initialDelaySeconds: 30
+           periodSeconds: 30 
+        readinessProbe:
+           tcpSocket:
+             port: 3000
+           initialDelaySeconds: 15
+           periodSeconds: 3
+        resources:
+          requests:
+            cpu: 700m
+            memory: 1Gi
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: coreapi-ingress
+  namespace: api
+  annotations:
+     kubernetes.io/ingress.class: nginx
+     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,Info"
+     nginx.ingress.kubernetes.io/enable-cors: "True"
+     nginx.ingress.kubernetes.io/cors-allow-credentials: "True"
+     nginx.ingress.kubernetes.io/cors-allow-origin: "https://www.beldex.io"
+     ingress.kubernetes.io/whitelist-source-range: 173.245.48.0/20
+     ingress.kubernetes.io/whitelist-source-range: 103.21.244.0/22
+     ingress.kubernetes.io/whitelist-source-range: 103.22.200.0/22
+     ingress.kubernetes.io/whitelist-source-range: 103.31.4.0/22
+     ingress.kubernetes.io/whitelist-source-range: 141.101.64.0/18
+     ingress.kubernetes.io/whitelist-source-range: 108.162.192.0/18
+     ingress.kubernetes.io/whitelist-source-range: 190.93.240.0/20
+     ingress.kubernetes.io/whitelist-source-range: 188.114.96.0/20
+     ingress.kubernetes.io/whitelist-source-range: 197.234.240.0/22
+     ingress.kubernetes.io/whitelist-source-range: 198.41.128.0/17
+     ingress.kubernetes.io/whitelist-source-range: 162.158.0.0/15
+     ingress.kubernetes.io/whitelist-source-range: 104.16.0.0/12
+     ingress.kubernetes.io/whitelist-source-range: 172.64.0.0/13
+     ingress.kubernetes.io/whitelist-source-range: 131.0.72.0/22
+#     nginx.ingress.kubernetes.io/limit-connections: "10"
+#     nginx.ingress.kubernetes.io/limit-rps: "60"
+#     ingress.kubernetes.io/affinity: "cookie"
+#     kubernetes.io/ingress.allow-http: "True"
+#     nginx.ingress.kubernetes.io/enable-modsecurity: "True"
+#     nginx.ingress.kubernetes.io/enable-owasp-modsecurity-crs: "True"
+#     nginx.org/hsts: "False"
+#     nginx.org/hsts-max-age: "2592000"
+#     nginx.org/hsts-include-subdomains: "False"
+#     nginx.org/hsts-behind-proxy: "False"
+#     ingress.kubernetes.io/ssl-redirect: "True"
+#     nginx.ingress.kubernetes.io/modsecurity-snippet: |
+#       SecRuleEngine On
+#       SecRequestBodyAccess On
+#       SecAuditEngine RelevantOnly
+#       SecAuditLogParts ABIJDEFHZ
+#       SecAuditLog /var/log/modsec_audit.log
+     nginx.ingress.kubernetes.io/configuration-snippet: |
+      if ($http_origin ~* (^https?://([^/]+\.)(www.beldex.io))) {
+          set $cors "true";
+      }
+      if ($request_method = 'OPTIONS') {
+          set $cors "${cors}options";
+      }
+      if ($request_method = 'GET') {
+          set $cors "${cors}get";
+      }
+      if ($request_method = 'POST') {
+          set $cors "${cors}post";
+      }
+
+      if ($request_method = 'PATCH') {
+          set $cors "${cors}patch";
+      }
+
+      if ($request_method = 'DELETE') {
+          set $cors "${cors}delete";
+      }
+
+      if ($cors = "true") {
+          add_header 'Access-Control-Allow-Origin' "$http_origin" ;
+      }
+
+      if ($cors = "trueget") {
+          add_header 'Access-Control-Allow-Origin' "$http_origin";
+          add_header 'Access-Control-Allow-Credentials' 'true';
+          add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PATCH, DELETE';
+          add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Info';
+      }
+
+      if ($cors = "trueoptions") {
+          add_header 'Access-Control-Allow-Origin' "$http_origin";
+          add_header 'Access-Control-Allow-Credentials' 'true';
+          add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PATCH, DELETE';
+          add_header 'Access-Control-Allow-Headers' 'Info,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type';
+          add_header 'Access-Control-Max-Age' 1728000;
+          add_header 'Content-Type' 'text/plain charset=UTF-8';
+          add_header 'Content-Length' 0;
+          return 204;
+      }
+
+      if ($cors = "truepost") {
+          add_header 'Access-Control-Allow-Origin' "$http_origin";
+          add_header 'Access-Control-Allow-Credentials' 'true';
+          add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PATCH, DELETE';
+          add_header 'Access-Control-Allow-Headers' 'Info,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type';
+      }
+
+      if ($cors = "truepatch") {
+          add_header 'Access-Control-Allow-Origin' "$http_origin";
+          add_header 'Access-Control-Allow-Credentials' 'true';
+          add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PATCH, DELETE';
+          add_header 'Access-Control-Allow-Headers' 'Info,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type';
+      }
+
+      if ($cors = "truedelete") {
+          add_header 'Access-Control-Allow-Origin' "$http_origin";
+          add_header 'Access-Control-Allow-Credentials' 'true';
+          add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PATCH, DELETE';
+          add_header 'Access-Control-Allow-Headers' 'Info,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type';
+      }
+
+spec:
+  rules:
+  - host: coreapi.beldex.io
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: coreapi
+          servicePort: 80
+  tls:
+  - secretName: sturdynewlat
+    hosts:
+    - coreapi.beldex.io

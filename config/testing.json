@@ -1,0 +1,22 @@
+{
+	"database": {
+		"database": "testing",
+		"host": "database",
+		"port": "27017",
+		"user": "root",
+		"password": "beldex123"
+	},
+	"encryption": {
+		"key": "encryptionKey"
+	},
+	"secrete": {
+		"issuer": "beldex",
+		"domain": "www.beldex.com",
+		"key": "privateKey",
+		"expiry": "12h"
+	},
+	"site": {
+		"url": "http://localhost:3000",
+		"version": "v1"
+	}
+}
